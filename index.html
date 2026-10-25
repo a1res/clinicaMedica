@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-family:system-ui,sans-serif;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Internato Clínica Médica 2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=JetBrains+Mono:wght@500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: cabeçalho, abas fixas, painel de filtros e lista de dias em cartões. Cor de cada subestágio identifica o local do dia. */
+:root{
+  --bg:#f2f5f4; --surface:#ffffff; --fg:#14211f; --muted:#587068; --line:#d8e0dd; --accent:#0b6e69; --accent-fg:#ffffff;
+  --c-e1:#2a6cb0; --c-e2:#b2601a; --c-e3:#3a8650; --c-em:#bf3a2c; --c-uti:#5b50b0;
+  --warn:#9a5208; --bad:#b3261e; --info:#1d5ea6;
+  --f-display:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1615; --surface:#162220; --fg:#e5eeec; --muted:#93a8a3; --line:#27383a; --accent:#52c4ba; --accent-fg:#06201e;
+  --c-e1:#7db3ee; --c-e2:#eaa563; --c-e3:#7fc990; --c-em:#f08a7d; --c-uti:#a9a1f2;
+  --warn:#f0b35a; --bad:#ff9d94; --info:#8fbcf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1615; --surface:#162220; --fg:#e5eeec; --muted:#93a8a3; --line:#27383a; --accent:#52c4ba; --accent-fg:#06201e;
+  --c-e1:#7db3ee; --c-e2:#eaa563; --c-e3:#7fc990; --c-em:#f08a7d; --c-uti:#a9a1f2;
+  --warn:#f0b35a; --bad:#ff9d94; --info:#8fbcf0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+*{box-sizing:border-box}
+.wrap{max-width:980px;margin:0 auto;padding-block:22px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,5vw,38px);line-height:1.1;margin:6px 0 4px;text-wrap:balance}
+.sub{margin:0;color:var(--muted)}
+.disclaimer{margin:14px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13.5px;max-width:70ch}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;margin-top:18px;padding-block:6px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{appearance:none;border:0;background:transparent;color:var(--muted);font:600 14px var(--f-body);padding:9px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-fg)}
+.tab:hover:not([aria-selected="true"]){background:var(--surface);color:var(--fg)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.pane{padding-top:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:end}
+.field{display:grid;gap:5px;min-width:0}
+.field>label,.lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+select,input[type=search]{font:500 14px var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0;max-width:100%}
+input[type=search]{min-width:200px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--fg);font:600 13.5px var(--f-body);padding:9px 14px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip-btn{appearance:none;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:500 14px var(--f-body);padding:8px 12px;border-radius:999px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.chip-btn small{color:var(--muted);font-size:12px}
+.chip-btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.chip-btn[aria-pressed="true"] small{color:inherit;opacity:.85}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.summary{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px}
+.summary h2{font-family:var(--f-display);font-size:22px;margin:0;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:600;background:var(--bg)}
+.timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.blk-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);display:grid;gap:3px;min-width:0}
+.blk-card.now{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.blk-card .b{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.blk-card .n{font-weight:600;color:var(--c);display:flex;gap:6px;align-items:center}
+.blk-card .n::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--c);flex:none}
+.blk-card .d{font-size:12.5px;color:var(--muted)}
+.special{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px}
+.special b{font-family:var(--f-mono);font-weight:500}
+.weekhd{display:flex;align-items:center;gap:10px;margin:22px 0 10px;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.weekhd::after{content:"";flex:1;height:1px;background:var(--line)}
+.days{display:grid;gap:12px}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;scroll-margin-top:70px}
+.day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.dh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--c) 9%,var(--surface))}
+.dd{display:flex;align-items:baseline;gap:6px;min-width:0}
+.dd .num{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1}
+.dd .mo{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.dd .wd{font-weight:600}
+.sub-chip{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13.5px;color:var(--c)}
+.sub-chip::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--c)}
+.blk{font-size:12.5px;color:var(--muted)}
+.items{display:grid}
+.it{display:grid;grid-template-columns:112px minmax(0,1fr);gap:4px 12px;padding:10px 14px}
+.it+.it{border-top:1px solid var(--line)}
+.it-time{font-family:var(--f-mono);font-size:13px;font-weight:500;padding-top:2px}
+.it-title{font-weight:600}
+.it-meta{font-size:13.5px;color:var(--muted)}
+.it-meta i{font-style:italic}
+.it.replaced .it-title,.it.susp .it-title{text-decoration:line-through;text-decoration-thickness:1px}
+.it.replaced,.it.susp{opacity:.75}
+.opts{display:grid;gap:6px;margin-top:2px}
+.opt{display:grid;grid-template-columns:112px minmax(0,1fr);gap:2px 12px}
+.opt .t{font-family:var(--f-mono);font-size:13px;font-weight:500}
+.or{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-left:124px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag{font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;border:1px solid currentColor}
+.tag.sim{color:var(--warn)}.tag.rep{color:var(--info)}.tag.bad{color:var(--bad)}.tag.mute{color:var(--muted)}.tag.ok{color:var(--c-e3)}
+.warn{font-size:13px;color:var(--warn);margin-top:3px}
+.it.kind-sim{background:color-mix(in srgb,var(--warn) 8%,var(--surface))}
+.it.kind-repos{background:color-mix(in srgb,var(--info) 8%,var(--surface))}
+.s-E1{--c:var(--c-e1)}.s-E2{--c:var(--c-e2)}.s-E3{--c:var(--c-e3)}.s-EM{--c:var(--c-em)}.s-UTI{--c:var(--c-uti)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 13.5px var(--f-body);padding:8px 12px;border-radius:8px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.6;cursor:progress}
+.export{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:8px}
+.export .status{font-size:13.5px;margin:0}
+.export .status.err{color:var(--bad)}
+.export .status a{color:var(--accent);font-weight:600}
+.trow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,2fr);gap:6px 16px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.trow .who{font-weight:600}
+.trow .lines{display:grid;gap:3px;font-size:13.5px}
+.trow .lines span{display:flex;flex-wrap:wrap;gap:4px 8px}
+.trow .lines b{font-family:var(--f-mono);font-weight:500;font-size:12.5px}
+.tlist{display:grid;gap:8px;margin-top:14px}
+.datebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:12px}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.hl,tr.hl td{background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+th.hl{background:color-mix(in srgb,var(--accent) 16%,var(--bg))}
+.cell{font-weight:600;color:var(--c)}
+h2.sec{font-family:var(--f-display);font-size:20px;margin:26px 0 0}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:4px}
+.q h3{margin:0;font-size:15.5px}
+.q p{margin:0;color:var(--muted);font-size:14px}
+.q p.ask{color:var(--fg)}
+.qlist{display:grid;gap:10px;margin-top:6px}
+footer{margin-top:34px;font-size:12.5px;color:var(--muted)}
+@media (max-width:719px){
+  .trow{grid-template-columns:minmax(0,1fr)}
+  .it,.opt{grid-template-columns:minmax(0,1fr)}
+  .or{padding-left:0}
+}
+@media (prefers-reduced-motion:no-preference){.day,.chip-btn,.tab{transition:border-color .15s,background-color .15s}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Mackenzie · Internato</p>
+    <h1>Internato de Clínica Médica 2</h1>
+    <p class="sub">26/10 a 18/12/2026 · 14 alunos · 5 grupos · 38 dias úteis</p>
+    <p class="disclaimer">Montado a partir do documento enviado pelo professor, que avisou que ele pode ter erros. O que ainda não está definido aparece marcado nos dias e listado na aba A confirmar.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Seções">
+    <button class="tab" role="tab" id="tb-calendario" data-tab="calendario" aria-selected="true">Meu calendário</button>
+    <button class="tab" role="tab" id="tb-turma" data-tab="turma" aria-selected="false">Turma no dia</button>
+    <button class="tab" role="tab" id="tb-rodizio" data-tab="rodizio" aria-selected="false">Rodízio e simulações</button>
+    <button class="tab" role="tab" id="tb-confirmar" data-tab="confirmar" aria-selected="false">A confirmar</button>
+  </nav>
+
+  <section class="pane" id="pane-calendario">
+    <div class="panel">
+      <div class="row">
+        <div class="field"><span class="lbl">Ver</span>
+          <div class="seg" role="group" aria-label="Modo">
+            <button id="mode-aluno" data-mode="aluno" aria-pressed="true">Um aluno</button>
+            <button id="mode-grupo" data-mode="grupo" aria-pressed="false">Grupo inteiro</button>
+          </div>
+        </div>
+        <div class="field" id="f-half"><span class="lbl">Metade do PS (Enf II)</span>
+          <div class="seg" role="group" aria-label="Metade do pronto-socorro">
+            <button data-half="?" aria-pressed="true">Não sei</button>
+            <button data-half="A" aria-pressed="false">A</button>
+            <button data-half="B" aria-pressed="false">B</button>
+          </div>
+        </div>
+        <div class="field"><label for="prof">Professor das visitas</label>
+          <select id="prof">
+            <option value="">Todos (mostra as opções)</option>
+            <option>Heitor</option><option>João Otavio</option><option>Fabíola</option><option>Raphael</option><option>Luiz Felipe</option><option>Marcelo</option>
+          </select>
+        </div>
+        <div class="field"><label for="period">Período</label>
+          <select id="period">
+            <option value="all">Estágio inteiro</option>
+            <option value="week">Próximos 7 dias</option>
+            <option value="0">Bloco 1 (26/10 a 04/11)</option>
+            <option value="1">Bloco 2 (05/11 a 13/11)</option>
+            <option value="2">Bloco 3 (16/11 a 26/11)</option>
+            <option value="3">Bloco 4 (27/11 a 08/12)</option>
+            <option value="4">Bloco 5 (09/12 a 18/12)</option>
+          </select>
+        </div>
+      </div>
+      <div id="who-aluno" class="row">
+        <div class="field"><label for="q">Buscar nome</label><input type="search" id="q" placeholder="Ex.: Julia" autocomplete="off"></div>
+        <div class="field"><label for="fg">Grupo</label>
+          <select id="fg"><option value="">Todos</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="field"><label for="fs">Simulação</label>
+          <select id="fs"><option value="">Todas</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+      </div>
+      <div id="chips-aluno" class="chips" aria-label="Alunos"></div>
+      <div id="chips-grupo" class="chips" aria-label="Grupos" hidden></div>
+      <p class="hint" id="hint-prof">Onde o documento diz "ou" entre dois professores, escolha o seu acima para ver só o seu horário.</p>
+    </div>
+    <div id="summary"></div>
+    <div class="export">
+      <div class="tools">
+        <button class="btn primary" id="gcal-export">Exportar para o Google Agenda</button>
+        <button class="btn" id="ics-export">Baixar arquivo .ics</button>
+      </div>
+      <p class="hint" id="export-hint"></p>
+      <p class="status" id="export-status" role="status" aria-live="polite" hidden></p>
+    </div>
+    <div class="tools" style="margin-top:14px"><button class="btn" id="goto-today">Ir para o próximo dia</button></div>
+    <div id="agenda"></div>
+  </section>
+
+  <section class="pane" id="pane-turma" hidden>
+    <div class="panel">
+      <div class="row">
+        <div class="field"><label for="tdate">Data</label><select id="tdate"></select></div>
+        <div class="field"><span class="lbl">&nbsp;</span><div class="datebar"><button class="btn" id="tprev">Dia anterior</button><button class="btn" id="tnext">Próximo dia</button></div></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="tq">Buscar nome</label><input type="search" id="tq" placeholder="Ex.: Pedro" autocomplete="off"></div>
+        <div class="field"><label for="tg">Grupo</label>
+          <select id="tg"><option value="">Todos</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="field"><label for="ts">Simulação</label>
+          <select id="ts"><option value="">Todas</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+      </div>
+    </div>
+    <div id="tinfo" class="hint" style="margin-top:12px"></div>
+    <div id="tlist" class="tlist"></div>
+  </section>
+
+  <section class="pane" id="pane-rodizio" hidden>
+    <p class="hint">A linha do seu grupo e da sua simulação fica destacada. Troque o aluno na aba Meu calendário.</p>
+    <h2 class="sec">Rodízio por bloco</h2>
+    <div class="tablewrap"><table id="t-rodizio"></table></div>
+    <h2 class="sec">Simulações</h2>
+    <p class="hint">A1 e A2 caem na terça de manhã. B1 e B2 caem na quarta à tarde. Horário, local e professor não foram informados.</p>
+    <div class="tablewrap"><table id="t-sim"></table></div>
+    <h2 class="sec">Ambulatório suspenso e reposições</h2>
+    <p class="hint">Suspensos em 28/10 e 04/11 (quarta, 8h às 12h) e em 29/10 e 05/11 (quinta, 13h às 17h). As reposições são propostas e dependem de autorização.</p>
+    <div class="tablewrap"><table id="t-repos"></table></div>
+  </section>
+
+  <section class="pane" id="pane-confirmar" hidden>
+    <p class="hint">Pontos do documento que estão incompletos ou parecem inconsistentes. Quem tiver a resposta, leve ao professor para ele ajustar.</p>
+    <div class="qlist" id="qlist"></div>
+  </section>
+
+  <footer>Dados do documento "Atividades Internato Clínica Médica Mackenzie, out a dez 2026". Versão de 25/10/2026.</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s);};
+/* ---------- Google Agenda ----------
+   Para exportar direto pela conta Google, crie um "ID do cliente OAuth" do tipo
+   "Aplicativo da Web" no Google Cloud Console (com a Google Calendar API ativada),
+   cadastre a origem onde o site fica publicado (ex.: https://seusite.github.io) e
+   cole o ID abaixo. Sem ID, ou abrindo o arquivo direto do computador (file://),
+   o botão baixa um .ics e abre a página de importação do Google Agenda. */
+var GOOGLE_CLIENT_ID='';
+var GCAL_SCOPE='https://www.googleapis.com/auth/calendar.app.created';
+var TZ='America/Sao_Paulo';
+var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var norm=function(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();};
+
+/* ---------- datas ---------- */
+function parse(d){var p=d.split('-').map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2]));}
+function toISO(t){return t.toISOString().slice(0,10);}
+function fmt(d){return d.slice(8,10)+'/'+d.slice(5,7);}
+function dowOf(d){return parse(d).getUTCDay();}
+var WD=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+var WDL=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+var MO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+var HOL={'2026-11-02':'Finados','2026-11-20':'Consciência Negra'};
+var DAYS=[];
+(function(){var t=parse('2026-10-26'),end=parse('2026-12-18');while(t<=end){var w=t.getUTCDay();var i=toISO(t);if(w>=1&&w<=5&&!HOL[i])DAYS.push(i);t=new Date(t.getTime()+864e5);}})();
+var BLOCKS=[{s:'2026-10-26',e:'2026-11-04'},{s:'2026-11-05',e:'2026-11-13'},{s:'2026-11-16',e:'2026-11-26'},{s:'2026-11-27',e:'2026-12-08'},{s:'2026-12-09',e:'2026-12-18'}];
+function blockIdx(d){for(var i=0;i<BLOCKS.length;i++){if(d>=BLOCKS[i].s&&d<=BLOCKS[i].e)return i;}return -1;}
+function blockDays(i){return DAYS.filter(function(d){return blockIdx(d)===i;}).length;}
+function todayISO(){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
+function toMin(h){var p=h.split(':');return +p[0]*60+ +p[1];}
+function weekStart(d){var dt=parse(d);var back=(dt.getUTCDay()+6)%7;return toISO(new Date(dt.getTime()-back*864e5));}
+
+/* ---------- dados ---------- */
+var STUDENTS=[
+ {id:'thiago',name:'Thiago Vinicius Deboni Daudt',short:'Thiago',g:1,sim:'A'},
+ {id:'davi',name:'Davi de Almeida Baggio',short:'Davi',g:1,sim:'A'},
+ {id:'joaoh',name:'João Henrique Mattos Lago',short:'João Henrique',g:2,sim:'B'},
+ {id:'joaop',name:'João Pedro Cardoso Aquim',short:'João Pedro',g:2,sim:'B'},
+ {id:'julia',name:'Julia Baldan Albano de Paula',short:'Julia',g:2,sim:'D'},
+ {id:'ana',name:'Ana Luísa Buttini Lazzaretti',short:'Ana Luísa',g:3,sim:'D'},
+ {id:'gabriel',name:'Gabriel Leite Ramos de Souza',short:'Gabriel',g:3,sim:'C'},
+ {id:'pedro',name:'Pedro Luis Peniche de Oliveira',short:'Pedro Luis',g:3,sim:'B'},
+ {id:'isadora',name:'Isadora Quirino Zanini',short:'Isadora',g:4,sim:'C'},
+ {id:'renatac',name:'Renata Citon Buhler',short:'Renata Citon',g:4,sim:'C'},
+ {id:'renatam',name:'Renata Medeiros Ferreira',short:'Renata Medeiros',g:4,sim:'D'},
+ {id:'andrei',name:'Andrei Tsupal Tenório Gomes',short:'Andrei',g:5,sim:'A'},
+ {id:'luca',name:'Luca Della Barba Wiecheteck',short:'Luca',g:5,sim:'B'},
+ {id:'matheus',name:'Matheus Toniolo Malafaia',short:'Matheus',g:5,sim:'A'}
+];
+var SUBN={E1:'Enfermaria I',E2:'Enfermaria II',E3:'Enfermaria III',EM:'Emergência',UTI:'UTI'};
+var ROT={1:['E1','E2','E3','EM','UTI'],2:['E2','E3','EM','UTI','E1'],3:['E3','EM','UTI','E1','E2'],4:['EM','UTI','E1','E2','E3'],5:['UTI','E1','E2','E3','EM']};
+var SIMS=[
+ ['2026-10-27','B','A1'],['2026-11-03','D','A1'],['2026-11-10','A','A1'],['2026-11-17','B','A2'],['2026-11-24','A','A2'],['2026-12-01','C','A1'],['2026-12-08','C','A2'],['2026-12-15','D','A2'],
+ ['2026-10-28','D','B1'],['2026-11-04','C','B1'],['2026-11-11','D','B2'],['2026-11-18','B','B1'],['2026-11-25','B','B2'],['2026-12-02','A','B1'],['2026-12-09','C','B2'],['2026-12-16','A','B2']
+].map(function(x){return {d:x[0],g:x[1],slot:x[2],morning:x[2].charAt(0)==='A'};});
+var REPOS=[
+ ['2026-11-18',3,'08:00','12:00','2026-10-28'],['2026-11-19',3,'13:00','17:00','2026-10-29'],['2026-11-25',3,'08:00','12:00','2026-11-04'],['2026-11-26',2,'13:00','17:00','2026-11-05'],
+ ['2026-12-09',1,'08:00','12:00','2026-10-28'],['2026-12-10',1,'13:00','17:00','2026-10-29'],['2026-12-16',1,'08:00','12:00','2026-11-04'],['2026-12-17',5,'13:00','17:00','2026-11-05']
+].map(function(x){return {d:x[0],g:x[1],s:x[2],e:x[3],susp:x[4]};});
+var SUSP={'2026-10-28':'am','2026-10-29':'pm','2026-11-04':'am','2026-11-05':'pm'};
+var MEET={'2026-10-26':'Reunião na sala Avelino (cerca de 30 min), horário a confirmar.','2026-11-13':'Possível reunião na sala Avelino (o professor citou "13", sem mês). Confirmar.','2026-11-30':'Possível reunião na sala Avelino (o professor citou "30", sem mês). Confirmar.'};
+
+var HUEM='HUEM, 6º andar', UTIPL='UTI Queimados, 5º andar, HUEM';
+function O(s,e,prof,place){return {s:s,e:e,prof:prof,place:place||null};}
+function V(s,e,prof,place,title){return {kind:'visit',title:title||'Visitas à beira-leito',s:s,e:e,prof:prof,place:place||null};}
+function CH(opts,title){return {kind:'visit',title:title||'Visitas à beira-leito',choice:opts};}
+function AMB(s,e,fb){return {kind:'amb',title:'Ambulatório de Clínica Médica',s:s,e:e,prof:'Letícia Czeczko',place:'FEMPAR',fallback:fb||null};}
+function PS(h){return {kind:'ps',title:'Pronto-socorro',s:'13:30',e:'17:00',prof:'Álvaro',half:h,place:null};}
+function SH(title,s,e,prof,place){return {kind:'shift',title:title,s:s,e:e,prof:prof,place:place||null};}
+function m2(){return CH([O('09:30','12:00','Fabíola'),O('10:00','12:30','Raphael',HUEM)]);}
+var T={
+ E1:{1:[CH([O('14:00','16:30','Heitor'),O('13:30','16:00','João Otavio',HUEM)])],
+     2:[V('10:00','12:30','Heitor'),V('13:30','16:00','João Otavio',HUEM)],
+     3:[AMB('08:00','12:00'),V('13:30','16:00','João Otavio',HUEM)],
+     4:[AMB('13:00','17:00',V('13:30','16:00','João Otavio',HUEM,'Enfermaria no lugar do ambulatório'))],
+     5:[V('10:00','12:30','Heitor'),V('13:30','16:00','João Otavio',HUEM)]},
+ E2:{1:[m2(),PS('A')],2:[m2(),PS('B')],3:[m2(),PS('A')],4:[V('09:30','12:00','Fabíola'),PS('B')],5:[m2()]},
+ E3:{1:[CH([O('10:00','12:30','Luiz Felipe'),O('10:30','13:00','Marcelo',HUEM)])],
+     2:[CH([O('11:15','13:45','Luiz Felipe'),O('09:00','11:30','Marcelo',HUEM)])],
+     3:[AMB('08:00','12:00',CH([O('10:30','13:00','Marcelo',HUEM),O('10:00','12:30','Luiz Felipe')],'Visitas no lugar do ambulatório'))],
+     4:[CH([O('11:15','13:45','Luiz Felipe'),O('10:30','12:30','Marcelo',HUEM)]),AMB('13:00','17:00')],
+     5:[CH([O('11:00','13:30','Luiz Felipe'),O('10:30','13:00','Marcelo',HUEM)])]},
+ EM:{},UTI:{}
+};
+[1,2,3,4,5].forEach(function(w){
+  T.EM[w]=[SH('Emergência','07:30','13:30','Cristiano Ribas')];
+  var u=w===1?['09:00','13:00']:(w===3?['13:00','19:00']:['07:30','13:30']);
+  T.UTI[w]=[SH('Rotina de UTI',u[0],u[1],'Claudio Franck',UTIPL)];
+});
+
+/* ---------- cálculo do dia ---------- */
+function clone(x){return JSON.parse(JSON.stringify(x));}
+function startOf(it){if(it.kind==='sim')return -1;if(it.kind==='meet')return -2;if(it.choice)return Math.min.apply(null,it.choice.map(function(o){return toMin(o.s);}));return toMin(it.s);}
+function shortName(it){return ({visit:'as visitas',amb:'o ambulatório',ps:'o PS',shift:'o turno de '+(it.title||'').toLowerCase(),repos:'a reposição do ambulatório',fallback:'a enfermaria substituta'})[it.kind]||'outra atividade';}
+
+function dayFor(p,d,st){
+  var dow=dowOf(d), bi=blockIdx(d), sub=ROT[p.g][bi];
+  var items=clone(T[sub][dow]||[]);
+  var sp=SUSP[d], out=[];
+  items.forEach(function(it){
+    if(it.kind==='amb'&&sp&&((sp==='am'&&it.s<'12:00')||(sp==='pm'&&it.s>='12:00'))){
+      out.push({kind:'susp',title:it.title,s:it.s,e:it.e,prof:it.prof,place:it.place,hasFallback:!!it.fallback});
+      if(it.fallback){var f=it.fallback;f.kind=f.kind==='visit'?'visit':f.kind;f.sub=true;out.push(f);}
+    }else out.push(it);
+  });
+  items=out;
+  if(st.half&&st.half!=='?'){items=items.filter(function(it){return !(it.kind==='ps'&&it.half!==st.half);});}
+  items.forEach(function(it){
+    if(it.choice&&st.prof){var m=it.choice.filter(function(o){return o.prof===st.prof;});if(m.length)it.choice=m;}
+  });
+  var sim=p.sim?SIMS.filter(function(x){return x.d===d&&x.g===p.sim;})[0]:null;
+  if(sim){
+    items.forEach(function(it){
+      if(it.kind==='susp')return;
+      var s=startOf(it);
+      if(sim.morning&&s<toMin('13:00'))it.replaced=true;
+      if(!sim.morning&&s>=toMin('13:00'))it.replaced=true;
+    });
+    items.push({kind:'sim',title:'Simulação '+sim.slot,period:sim.morning?'manhã':'tarde'});
+  }
+  REPOS.filter(function(r){return r.d===d&&r.g===p.g;}).forEach(function(r){
+    items.push({kind:'repos',title:'Reposição do ambulatório',s:r.s,e:r.e,prof:'Letícia Czeczko',place:'FEMPAR',ref:r.susp});
+  });
+  if(MEET[d])items.push({kind:'meet',title:MEET[d],firm:d==='2026-10-26'});
+  // avisos de sobreposição
+  var timed=items.filter(function(it){return !it.replaced&&it.kind!=='susp'&&it.kind!=='sim'&&it.kind!=='meet';});
+  function spans(it){return it.choice?it.choice.map(function(o){return {o:o,s:toMin(o.s),e:toMin(o.e)};}):[{o:it,s:toMin(it.s),e:toMin(it.e)}];}
+  for(var i=0;i<timed.length;i++)for(var j=i+1;j<timed.length;j++){
+    var A=timed[i],B=timed[j];
+    spans(A).forEach(function(a){spans(B).forEach(function(b){
+      var ov=Math.min(a.e,b.e)-Math.max(a.s,b.s);
+      if(ov>0){
+        (a.o.warns=a.o.warns||[]).push('Sobrepõe '+ov+' min com '+shortName(B)+'. Combine com o professor.');
+        (b.o.warns=b.o.warns||[]).push('Sobrepõe '+ov+' min com '+shortName(A)+'. Combine com o professor.');
+      }
+    });});
+  }
+  items.sort(function(a,b){return startOf(a)-startOf(b);});
+  return {sub:sub,bi:bi,items:items,sim:sim};
+}
+
+/* ---------- estado ---------- */
+var state={tab:'calendario',mode:'aluno',student:'julia',group:2,half:'?',prof:'',period:'all',q:'',fg:'',fs:'',tdate:DAYS[0],tq:'',tg:'',ts:''};
+function save(){try{localStorage.setItem('icm2',JSON.stringify({mode:state.mode,student:state.student,group:state.group,half:state.half,prof:state.prof,period:state.period}));}catch(e){}}
+function load(){try{var r=localStorage.getItem('icm2');if(r){var o=JSON.parse(r);['mode','student','group','half','prof','period'].forEach(function(k){if(o[k]!==undefined)state[k]=o[k];});}}catch(e){}}
+function stu(id){return STUDENTS.filter(function(s){return s.id===id;})[0]||STUDENTS[4];}
+function person(){
+  if(state.mode==='grupo')return {g:state.group,sim:null,label:'Grupo '+state.group};
+  var s=stu(state.student);return {g:s.g,sim:s.sim,label:s.name,s:s};
+}
+
+/* ---------- renderização de itens ---------- */
+function placeHTML(pl){return pl?esc(pl):'<i>local não informado</i>';}
+function optHTML(o){
+  var w=(o.warns||[]).map(function(x){return '<div class="warn">'+esc(x)+'</div>';}).join('');
+  return '<div class="opt"><span class="t">'+o.s+'–'+o.e+'</span><div><div class="it-meta">Prof. '+esc(o.prof)+' · '+placeHTML(o.place)+'</div>'+w+'</div></div>';
+}
+function itemHTML(it){
+  var k='it kind-'+it.kind+(it.replaced?' replaced':'')+(it.kind==='susp'?' susp':'');
+  if(it.kind==='meet'){
+    return '<div class="'+k+'"><div class="it-time">'+(it.firm?'Segunda':'A confirmar')+'</div><div><div class="it-title">'+esc(it.title)+'</div></div></div>';
+  }
+  if(it.kind==='sim'){
+    return '<div class="'+k+'"><div class="it-time">'+it.period+'</div><div><div class="it-title">'+esc(it.title)+'</div><div class="it-meta">Horário, local e professor ainda não informados.</div><div class="tags"><span class="tag sim">Simulação</span></div></div></div>';
+  }
+  var tags='';
+  if(it.replaced)tags+='<span class="tag sim">Provavelmente substituída pela simulação</span>';
+  if(it.kind==='susp')tags+='<span class="tag bad">Suspenso</span>'+(it.hasFallback?'':'<span class="tag bad">Sem atividade substituta definida</span>');
+  if(it.kind==='repos')tags+='<span class="tag rep">Repõe '+fmt(it.ref)+'</span><span class="tag mute">Proposta, depende de autorização</span>';
+  if(it.sub)tags+='<span class="tag ok">Substituta</span>';
+  if(it.kind==='ps')tags+='<span class="tag mute">Metade '+it.half+'</span>';
+  if(it.choice){
+    var parts=it.choice.map(optHTML).join('<div class="or">ou</div>');
+    return '<div class="'+k+'" style="grid-template-columns:1fr"><div><div class="it-title">'+esc(it.title)+'</div><div class="opts">'+parts+'</div>'+(tags?'<div class="tags">'+tags+'</div>':'')+'</div></div>';
+  }
+  var warn=(it.warns||[]).map(function(x){return '<div class="warn">'+esc(x)+'</div>';}).join('');
+  return '<div class="'+k+'"><div class="it-time">'+it.s+'–'+it.e+'</div><div><div class="it-title">'+esc(it.title)+'</div><div class="it-meta">Prof. '+esc(it.prof)+' · '+placeHTML(it.place)+'</div>'+warn+(tags?'<div class="tags">'+tags+'</div>':'')+'</div></div>';
+}
+
+function dayHTML(d,p){
+  var r=dayFor(p,d,state), dow=dowOf(d), today=todayISO();
+  var first=blockIdx(d)!==blockIdx(DAYS[Math.max(0,DAYS.indexOf(d)-1)])||d===DAYS[0];
+  var body=r.items.length?r.items.map(itemHTML).join(''):'<div class="it"><div class="it-meta">Sem atividade prevista.</div></div>';
+  var extra='';
+  if(state.mode==='grupo'){
+    var out=STUDENTS.filter(function(s){return s.g===p.g;}).map(function(s){return {s:s,x:SIMS.filter(function(x){return x.d===d&&x.g===s.sim;})[0]};}).filter(function(o){return o.x;});
+    if(out.length){
+      extra='<div class="it" style="grid-template-columns:1fr"><div><div class="it-title">Fora do grupo neste dia</div><div class="it-meta">'+out.map(function(o){return esc(o.s.short)+' (Simulação '+o.x.slot+', '+(o.x.morning?'manhã':'tarde')+')';}).join(' · ')+'</div></div></div>';
+    }
+  }
+  return '<article class="day s-'+r.sub+(d===today?' today':'')+'" id="d-'+d+'"><header class="dh"><div class="dd"><span class="num">'+d.slice(8)+'</span><span class="mo">'+MO[+d.slice(5,7)-1]+'</span><span class="wd">'+WDL[dow]+'</span></div><span class="sub-chip">'+SUBN[r.sub]+'</span><span class="blk">Bloco '+(r.bi+1)+(first?' · primeiro dia':'')+'</span>'+(d===today?'<span class="tag ok">Hoje</span>':'')+'</header><div class="items">'+body+extra+'</div></article>';
+}
+
+function periodDays(){
+  var p=state.period;
+  if(p==='all')return DAYS.slice();
+  if(p==='week'){
+    var t=todayISO();var from=t<DAYS[0]?DAYS[0]:t;
+    var to=toISO(new Date(parse(from).getTime()+7*864e5));
+    return DAYS.filter(function(d){return d>=from&&d<to;});
+  }
+  var i=+p;return DAYS.filter(function(d){return blockIdx(d)===i;});
+}
+
+function renderSummary(){
+  var p=person(), host=$('#summary');
+  var rot=ROT[p.g], now=blockIdx(todayISO());
+  var tl=BLOCKS.map(function(b,i){
+    return '<div class="blk-card s-'+rot[i]+(i===now?' now':'')+'"><span class="b">Bloco '+(i+1)+(i===now?' · agora':'')+'</span><span class="n">'+SUBN[rot[i]]+'</span><span class="d">'+fmt(b.s)+' a '+fmt(b.e)+' · '+blockDays(i)+' dias úteis</span></div>';
+  }).join('');
+  var head,pills,spec='';
+  if(state.mode==='grupo'){
+    var mem=STUDENTS.filter(function(s){return s.g===p.g;});
+    head='Grupo '+p.g;
+    pills='<span class="pill">'+mem.map(function(s){return esc(s.short)+' (sim. '+s.sim+')';}).join(' · ')+'</span>';
+  }else{
+    head=p.s.name;
+    pills='<span class="pill">Grupo '+p.g+'</span><span class="pill">Simulação '+p.sim+'</span><span class="pill">Colegas de grupo: '+STUDENTS.filter(function(s){return s.g===p.g&&s.id!==p.s.id;}).map(function(s){return esc(s.short);}).join(', ')+'</span>';
+    var sl=SIMS.filter(function(x){return x.g===p.sim;}).sort(function(a,b){return a.d<b.d?-1:1;}).map(function(x){return '<li><b>'+fmt(x.d)+'</b> · Simulação '+x.slot+' ('+(x.morning?'terça de manhã':'quarta à tarde')+')</li>';}).join('');
+    spec+='<div><div class="lbl">Suas simulações</div><ul class="special">'+sl+'</ul></div>';
+  }
+  var rl=REPOS.filter(function(r){return r.g===p.g;}).sort(function(a,b){return a.d<b.d?-1:1;}).map(function(r){return '<li><b>'+fmt(r.d)+'</b> · '+r.s+'–'+r.e+' ambulatório (repõe '+fmt(r.susp)+')</li>';}).join('');
+  if(rl)spec+='<div><div class="lbl">Reposições de ambulatório (propostas)</div><ul class="special">'+rl+'</ul></div>';
+  host.innerHTML='<div class="summary"><h2>'+esc(head)+'</h2><div class="meta">'+pills+'</div><div class="timeline">'+tl+'</div>'+(spec?'<div class="timeline" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">'+spec+'</div>':'')+'</div>';
+}
+
+function renderAgenda(){
+  var p=person(), days=periodDays(), host=$('#agenda');
+  if(!days.length){host.innerHTML='<div class="empty" style="margin-top:16px">Nenhum dia útil no período escolhido.</div>';return;}
+  var html='',cur='';
+  days.forEach(function(d){
+    var w=weekStart(d);
+    if(w!==cur){
+      if(cur)html+='</div>';
+      cur=w;
+      html+='<div class="weekhd">Semana de '+fmt(w)+'</div><div class="days">';
+    }
+    html+=dayHTML(d,p);
+  });
+  html+='</div>';
+  host.innerHTML=html;
+}
+
+function renderChips(){
+  var q=norm(state.q);
+  var list=STUDENTS.filter(function(s){
+    return (!q||norm(s.name).indexOf(q)>=0)&&(!state.fg||String(s.g)===state.fg)&&(!state.fs||s.sim===state.fs);
+  });
+  $('#chips-aluno').innerHTML=list.length?list.map(function(s){
+    return '<button class="chip-btn" data-student="'+s.id+'" aria-pressed="'+(s.id===state.student)+'">'+esc(s.short)+' <small>G'+s.g+' · '+s.sim+'</small></button>';
+  }).join(''):'<span class="hint">Nenhum aluno com esses filtros.</span>';
+  $('#chips-grupo').innerHTML=[1,2,3,4,5].map(function(g){
+    return '<button class="chip-btn" data-group="'+g+'" aria-pressed="'+(g===state.group)+'">Grupo '+g+' <small>'+STUDENTS.filter(function(s){return s.g===g;}).map(function(s){return s.short;}).join(', ')+'</small></button>';
+  }).join('');
+}
+
+function syncControls(){
+  $$('[data-mode]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode));});
+  $$('[data-half]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.half===state.half));});
+  $('#prof').value=state.prof;$('#period').value=state.period;
+  $('#who-aluno').hidden=state.mode!=='aluno';
+  $('#chips-aluno').hidden=state.mode!=='aluno';
+  $('#chips-grupo').hidden=state.mode!=='grupo';
+}
+
+function renderCal(){syncControls();renderChips();renderSummary();renderAgenda();renderExportHint();}
+
+/* ---------- exportação ---------- */
+var GCOLOR={E1:'9',E2:'6',E3:'10',EM:'11',UTI:'3',SIM:'5'};
+function calName(){var p=person();return 'Internato CM2 · '+(state.mode==='grupo'?p.label:p.s.short);}
+function slug(s){return norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+function nextDay(d){return toISO(new Date(parse(d).getTime()+864e5));}
+function calEvents(){
+  var p=person(), out=[];
+  DAYS.forEach(function(d){
+    var r=dayFor(p,d,state), where=SUBN[r.sub]+' · Bloco '+(r.bi+1);
+    r.items.forEach(function(it){
+      if(it.kind==='susp')return;
+      if(it.kind==='meet'){out.push({d:d,allDay:true,title:'Reunião na sala Avelino'+(it.firm?'':' (a confirmar)'),desc:it.title,color:r.sub});return;}
+      if(it.kind==='sim'){
+        var m=it.period==='manhã';
+        out.push({d:d,s:m?'08:00':'13:00',e:m?'12:00':'17:00',title:it.title,desc:'Horário, local e professor ainda não informados. O horário aqui é só uma estimativa do turno da '+it.period+'.',color:'SIM'});
+        return;
+      }
+      var notes=[where];
+      if(it.replaced)notes.push('Provavelmente substituída pela simulação.');
+      if(it.kind==='repos')notes.push('Repõe o ambulatório de '+fmt(it.ref)+'. Proposta, depende de autorização.');
+      if(it.kind==='ps')notes.push('Metade '+it.half+' do grupo.');
+      if(it.sub)notes.push('Atividade substituta do ambulatório suspenso.');
+      var opts=it.choice||[it], many=opts.length>1;
+      if(many)notes.push('Uma de '+opts.length+' opções do dia (o documento diz "ou"). Escolha o professor no site para exportar só a sua.');
+      opts.forEach(function(o){
+        out.push({d:d,s:o.s,e:o.e,
+          title:(it.replaced?'Talvez: ':'')+it.title+(it.kind==='ps'?' (metade '+it.half+')':'')+(many?' · opção '+o.prof:''),
+          loc:o.place||'',
+          desc:['Prof. '+o.prof].concat(notes,o.warns||[]).join('\n'),
+          color:r.sub});
+      });
+    });
+  });
+  return out;
+}
+function renderExportHint(){
+  var p=person();
+  var bits=['o estágio inteiro (26/10 a 18/12) de '+(state.mode==='grupo'?p.label:p.s.name)];
+  bits.push(state.half==='?'?'as duas metades do PS':'só a metade '+state.half+' do PS');
+  bits.push(state.prof?'só as visitas do Prof. '+state.prof+' onde há opção':'todas as opções de professor');
+  $('#export-hint').textContent='Exporta '+bits.join(', ')+'. Ajuste os filtros acima antes de exportar. Simulações e reuniões entram com horário estimado.';
+}
+function setStatus(html,err){var el=$('#export-status');el.hidden=!html;el.className='status'+(err?' err':'');el.innerHTML=html||'';}
+
+function icsText(evs){
+  var e=function(s){return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');};
+  var dt=function(d,h){return d.replace(/-/g,'')+'T'+h.replace(':','')+'00';};
+  var fold=function(l){var o=[];while(l.length>73){o.push(l.slice(0,73));l=' '+l.slice(73);}o.push(l);return o.join('\r\n');};
+  var stamp=new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+  var L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Internato CM2//PT-BR','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:'+e(calName()),'X-WR-TIMEZONE:'+TZ,
+    'BEGIN:VTIMEZONE','TZID:'+TZ,'BEGIN:STANDARD','DTSTART:19700101T000000','TZOFFSETFROM:-0300','TZOFFSETTO:-0300','TZNAME:-03','END:STANDARD','END:VTIMEZONE'];
+  evs.forEach(function(v,i){
+    L.push('BEGIN:VEVENT','UID:icm2-'+slug(calName())+'-'+v.d+'-'+i+'@internato','DTSTAMP:'+stamp);
+    if(v.allDay)L.push('DTSTART;VALUE=DATE:'+v.d.replace(/-/g,''),'DTEND;VALUE=DATE:'+nextDay(v.d).replace(/-/g,''));
+    else L.push('DTSTART;TZID='+TZ+':'+dt(v.d,v.s),'DTEND;TZID='+TZ+':'+dt(v.d,v.e));
+    L.push('SUMMARY:'+e(v.title));
+    if(v.loc)L.push('LOCATION:'+e(v.loc));
+    if(v.desc)L.push('DESCRIPTION:'+e(v.desc));
+    L.push('END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.map(fold).join('\r\n')+'\r\n';
+}
+function downloadICS(){
+  var evs=calEvents();
+  var blob=new Blob([icsText(evs)],{type:'text/calendar;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=slug(calName())+'.ics';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+  return evs.length;
+}
+function importFallback(){
+  var n=downloadICS();
+  window.open('https://calendar.google.com/calendar/u/0/r/settings/export','_blank','noopener');
+  setStatus('Baixamos o arquivo com '+n+' eventos. Na aba do Google Agenda que abriu, entre na sua conta Google, clique em <b>Selecionar arquivo do computador</b>, escolha o .ics baixado e clique em <b>Importar</b>. Dica: crie antes uma agenda só para o internato (Configurações › Adicionar agenda) e importe nela, assim fica fácil apagar tudo depois.');
+}
+
+var tokenClient=null;
+function gisReady(){return !!(window.google&&google.accounts&&google.accounts.oauth2);}
+function loadGIS(){
+  if(!GOOGLE_CLIENT_ID||location.protocol==='file:'||gisReady())return;
+  var sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.async=true;document.head.appendChild(sc);
+}
+function exportGoogle(){
+  if(!GOOGLE_CLIENT_ID||location.protocol==='file:'){importFallback();return;}
+  if(!gisReady()){setStatus('O login do Google ainda está carregando. Tente de novo em alguns segundos.',true);loadGIS();return;}
+  if(!tokenClient){
+    tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:GCAL_SCOPE,callback:function(){},
+      error_callback:function(err){setStatus('Login com o Google não concluído'+(err&&err.type==='popup_closed'?' (janela fechada)':'')+'. Tente de novo.',true);}});
+  }
+  tokenClient.callback=function(resp){
+    if(resp.error){setStatus('O Google recusou o acesso: '+esc(resp.error_description||resp.error),true);return;}
+    if(!google.accounts.oauth2.hasGrantedAllScopes(resp,GCAL_SCOPE)){setStatus('Para exportar, autorize o acesso ao Google Agenda na janela de login.',true);return;}
+    pushToGoogle(resp.access_token);
+  };
+  setStatus('Abrindo o login do Google…');
+  tokenClient.requestAccessToken();
+}
+async function pushToGoogle(token){
+  var btn=$('#gcal-export');btn.disabled=true;
+  var wait=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
+  async function api(method,path,body,tries){
+    tries=tries||0;
+    var r=await fetch('https://www.googleapis.com/calendar/v3'+path,{method:method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+    if(r.status===204)return null;
+    var j=await r.json().catch(function(){return {};});
+    var limited=r.status===429||(r.status===403&&/rate/i.test(JSON.stringify(j)));
+    if(limited&&tries<5){await wait(800*Math.pow(2,tries));return api(method,path,body,tries+1);}
+    if(!r.ok)throw new Error((j.error&&j.error.message)||('erro '+r.status));
+    return j;
+  }
+  try{
+    var name=calName(), key='icm2-gcal-'+slug(name), old=null;
+    try{old=localStorage.getItem(key);}catch(e){}
+    if(old){setStatus('Removendo a exportação anterior…');try{await api('DELETE','/calendars/'+encodeURIComponent(old));}catch(e){}}
+    setStatus('Criando a agenda "'+esc(name)+'"…');
+    var cal=await api('POST','/calendars',{summary:name,timeZone:TZ,description:'Internato de Clínica Médica 2, Mackenzie, 26/10 a 18/12/2026. Gerado pelo site do internato; o documento original pode ter erros.'});
+    try{localStorage.setItem(key,cal.id);}catch(e){}
+    var evs=calEvents(), path='/calendars/'+encodeURIComponent(cal.id)+'/events';
+    for(var i=0;i<evs.length;i++){
+      var v=evs[i];
+      setStatus('Enviando eventos: '+(i+1)+' de '+evs.length+'…');
+      await api('POST',path,{summary:v.title,location:v.loc||undefined,description:v.desc||undefined,colorId:GCOLOR[v.color],
+        start:v.allDay?{date:v.d}:{dateTime:v.d+'T'+v.s+':00',timeZone:TZ},
+        end:v.allDay?{date:nextDay(v.d)}:{dateTime:v.d+'T'+v.e+':00',timeZone:TZ}});
+    }
+    setStatus('Pronto: '+evs.length+' eventos na agenda "'+esc(name)+'". <a href="https://calendar.google.com/calendar/r/week/2026/10/26" target="_blank" rel="noopener">Abrir o Google Agenda</a>. Se exportar de novo, essa agenda é substituída.');
+  }catch(e){
+    setStatus('Não deu para exportar: '+esc(e.message)+'. Use "Baixar arquivo .ics" e importe no Google Agenda.',true);
+  }finally{btn.disabled=false;}
+}
+
+/* ---------- turma no dia ---------- */
+function lineFor(it){
+  if(it.kind==='sim')return '<span><b>'+it.period+'</b> '+esc(it.title)+'</span>';
+  if(it.kind==='meet')return '<span><b>'+(it.firm?'Reunião':'Reunião?')+'</b> sala Avelino</span>';
+  var name={visit:'Visitas',amb:'Ambulatório',ps:'PS',shift:it.title,repos:'Reposição amb.',susp:'Ambulatório suspenso'}[it.kind]||it.title;
+  if(it.sub)name='Enfermaria (substituta)';
+  var t=it.choice?it.choice.map(function(o){return o.s+'–'+o.e;}).join(' ou '):it.s+'–'+it.e;
+  var n=(it.replaced?'<s>':'')+esc(name)+(it.replaced?'</s>':'');
+  return '<span><b>'+t+'</b> '+n+(it.replaced?' (provável simulação)':'')+'</span>';
+}
+function renderTurma(){
+  var d=state.tdate, q=norm(state.tq);
+  var list=STUDENTS.filter(function(s){return (!q||norm(s.name).indexOf(q)>=0)&&(!state.tg||String(s.g)===state.tg)&&(!state.ts||s.sim===state.ts);});
+  $('#tinfo').textContent=WDL[dowOf(d)].charAt(0).toUpperCase()+WDL[dowOf(d)].slice(1)+', '+fmt(d)+' · Bloco '+(blockIdx(d)+1)+(SUSP[d]?' · ambulatório suspenso '+(SUSP[d]==='am'?'de manhã':'à tarde'):'');
+  $('#tlist').innerHTML=list.length?list.map(function(s){
+    var r=dayFor({g:s.g,sim:s.sim},d,{half:'?',prof:''});
+    return '<div class="trow s-'+r.sub+'"><div><div class="who">'+esc(s.name)+'</div><div class="it-meta">Grupo '+s.g+' · Simulação '+s.sim+'</div></div><div><span class="sub-chip">'+SUBN[r.sub]+'</span></div><div class="lines">'+r.items.map(lineFor).join('')+'</div></div>';
+  }).join(''):'<div class="empty">Nenhum aluno com esses filtros.</div>';
+  $('#tdate').value=d;
+}
+
+/* ---------- rodízio ---------- */
+function renderTables(){
+  var p=person(), now=blockIdx(todayISO());
+  var h='<thead><tr><th>Grupo</th>'+BLOCKS.map(function(b,i){return '<th class="'+(i===now?'hl':'')+'">Bloco '+(i+1)+'<br>'+fmt(b.s)+' a '+fmt(b.e)+'<br>'+blockDays(i)+' dias úteis</th>';}).join('')+'</tr></thead><tbody>';
+  [1,2,3,4,5].forEach(function(g){
+    var mem=STUDENTS.filter(function(s){return s.g===g;}).map(function(s){return esc(s.short)+' ('+s.sim+')';}).join(', ');
+    h+='<tr class="'+(g===p.g?'hl':'')+'"><td><b>Grupo '+g+'</b><br><span class="it-meta">'+mem+'</span></td>'+ROT[g].map(function(c){return '<td class="s-'+c+'"><span class="cell">'+SUBN[c]+'</span></td>';}).join('')+'</tr>';
+  });
+  $('#t-rodizio').innerHTML=h+'</tbody>';
+  var s='<thead><tr><th>Grupo</th><th>A1 (terça, manhã)</th><th>A2 (terça, manhã)</th><th>B1 (quarta, tarde)</th><th>B2 (quarta, tarde)</th></tr></thead><tbody>';
+  ['A','B','C','D'].forEach(function(g){
+    var mem=STUDENTS.filter(function(x){return x.sim===g;}).map(function(x){return esc(x.short);}).join(', ');
+    s+='<tr class="'+(g===p.sim?'hl':'')+'"><td><b>'+g+'</b><br><span class="it-meta">'+mem+'</span></td>'+['A1','A2','B1','B2'].map(function(sl){var x=SIMS.filter(function(y){return y.g===g&&y.slot===sl;})[0];return '<td>'+fmt(x.d)+'</td>';}).join('')+'</tr>';
+  });
+  $('#t-sim').innerHTML=s+'</tbody>';
+  var r='<thead><tr><th>Reposição</th><th>Horário</th><th>Grupo e alunos</th><th>Repõe</th><th>Observação</th></tr></thead><tbody>';
+  REPOS.slice().sort(function(a,b){return a.d<b.d?-1:1;}).forEach(function(x){
+    var thu=x.s==='13:00';
+    var mem=STUDENTS.filter(function(s){return s.g===x.g;}).map(function(s){return esc(s.short);}).join(', ');
+    r+='<tr class="'+(x.g===p.g?'hl':'')+'"><td>'+WD[dowOf(x.d)]+' '+fmt(x.d)+'</td><td>'+x.s+'–'+x.e+'</td><td>Grupo '+x.g+' · '+mem+'</td><td>'+fmt(x.susp)+'</td><td>'+(thu?'Termina o turno de Emergência ou UTI às 13h30. Ajuste de 30 min.':'UTI começa às 13h.')+' Depende de autorização.</td></tr>';
+  });
+  $('#t-repos').innerHTML=r+'</tbody>';
+}
+
+/* ---------- a confirmar ---------- */
+var QS=[
+ ['Reuniões na sala Avelino','O professor pediu reunião de cerca de 30 minutos na segunda, em "13" e em "30", para todos. O documento não traz essas reuniões, não diz o mês nem o horário. Na segunda 26/10 não existe meia hora livre comum a todos os grupos.','Qual o mês, o horário e o prédio de cada reunião, e quem será liberado mais cedo?'],
+ ['Simulações sem detalhes','A1, A2, B1 e B2 não têm horário, local, professor nem descrição. O documento diz que a simulação substitui a atividade habitual do turno. Esta página assume que a de terça substitui as atividades da manhã e a de quarta, as da tarde.','Quais os horários e o que cada aluno deixa de fazer no turno?'],
+ ['Professores com "ou"','Na Enfermaria II e III, e na segunda da Enfermaria I, há dois professores por dia. O documento não diz como o grupo se divide.','Quem vai com qual professor, e isso muda por dia?'],
+ ['Metade A ou B do pronto-socorro','O PS do Álvaro divide cada grupo em metades que alternam as tardes. Ninguém foi designado. Cada aluno faz PS em 2 tardes por semana e nas outras não há nada descrito.','Quem é A e quem é B? Há atividade nas outras tardes?'],
+ ['Locais que faltam','Não há local para Emergência, PS do Álvaro, visitas de Heitor, Fabíola e Luiz Felipe. O local da UTI só aparece na segunda. A sala Avelino não tem prédio nem andar.','Onde ficam esses locais?'],
+ ['Ambulatório suspenso sem substituta','Sem atividade alternativa na Enfermaria I quarta de manhã (28/10 e 04/11) e na Enfermaria III quinta à tarde (29/10 e 05/11). Nos outros dois casos há enfermaria substituta.','O que fazer nesses turnos?'],
+ ['Substituta mais reposição','Onde há atividade substituta (Enfermaria I quinta, Enfermaria III quarta) ainda existe reposição. Os Grupos 1 e 3 perdem as 3 sessões do bloco original, então todo o ambulatório deles vira reposição.','A reposição vale também quando houve substituta?'],
+ ['Reposições são só propostas','As de quinta têm 30 min de sobreposição com Emergência ou UTI e não contam o deslocamento entre HUEM e FEMPAR nem o almoço. Nas datas de reposição o ambulatório teria 8 ou 9 alunos, contra 5 a 6 normalmente.','Elas foram autorizadas? Há limite de alunos?'],
+ ['Enfermaria III na quinta','A visita com Luiz Felipe termina às 13h45 e o ambulatório começa às 13h. A recomendação é avisar o atraso.','Existe horário alternativo?'],
+ ['Carga desigual entre grupos','Ambulatório previsto, contando reposições: Grupo 4 com 8 sessões, Grupos 1 e 2 com 7, Grupos 3 e 5 com 5. Os blocos têm 7 ou 8 dias e três das quatro trocas caem no meio da semana. A carga semanal vai de cerca de 18h (Enfermaria III) a 30h (Emergência).','Essa diferença é intencional?'],
+ ['Matriz diária incompleta','A matriz do documento não marca reposições nem reuniões. Esta página marca.','Confirmar se a matriz será atualizada.']
+];
+function renderQ(){
+  $('#qlist').innerHTML=QS.map(function(q){return '<div class="q"><h3>'+esc(q[0])+'</h3><p>'+esc(q[1])+'</p><p class="ask">'+esc(q[2])+'</p></div>';}).join('');
+}
+
+/* ---------- abas e eventos ---------- */
+function showTab(t){
+  state.tab=t;
+  ['calendario','turma','rodizio','confirmar'].forEach(function(n){
+    $('#pane-'+n).hidden=n!==t;
+    $('#tb-'+n).setAttribute('aria-selected',String(n===t));
+  });
+  if(t==='turma')renderTurma();
+  if(t==='rodizio')renderTables();
+}
+function initTurmaDate(){
+  $('#tdate').innerHTML=DAYS.map(function(d){return '<option value="'+d+'">'+WD[dowOf(d)]+' '+fmt(d)+'</option>';}).join('');
+  var t=todayISO();var first=DAYS.filter(function(d){return d>=t;})[0];
+  state.tdate=first||DAYS[0];
+}
+function bind(){
+  $$('.tab').forEach(function(b){b.addEventListener('click',function(){showTab(b.dataset.tab);});});
+  $$('[data-mode]').forEach(function(b){b.addEventListener('click',function(){state.mode=b.dataset.mode;save();renderCal();});});
+  $$('[data-half]').forEach(function(b){b.addEventListener('click',function(){state.half=b.dataset.half;save();renderCal();});});
+  $('#prof').addEventListener('change',function(e){state.prof=e.target.value;save();renderCal();});
+  $('#period').addEventListener('change',function(e){state.period=e.target.value;save();renderCal();});
+  $('#q').addEventListener('input',function(e){state.q=e.target.value;renderChips();});
+  $('#fg').addEventListener('change',function(e){state.fg=e.target.value;renderChips();});
+  $('#fs').addEventListener('change',function(e){state.fs=e.target.value;renderChips();});
+  $('#chips-aluno').addEventListener('click',function(e){var b=e.target.closest('[data-student]');if(!b)return;state.student=b.dataset.student;save();renderCal();});
+  $('#chips-grupo').addEventListener('click',function(e){var b=e.target.closest('[data-group]');if(!b)return;state.group=+b.dataset.group;save();renderCal();});
+  $('#goto-today').addEventListener('click',function(){
+    var t=todayISO();var d=DAYS.filter(function(x){return x>=t;})[0]||DAYS[DAYS.length-1];
+    var el=document.getElementById('d-'+d);
+    if(!el){state.period='all';save();renderCal();el=document.getElementById('d-'+d);}
+    if(el)el.scrollIntoView({block:'start'});
+  });
+  $('#gcal-export').addEventListener('click',exportGoogle);
+  $('#ics-export').addEventListener('click',function(){var n=downloadICS();setStatus('Arquivo .ics com '+n+' eventos baixado. Serve para Google Agenda, Outlook e Apple Calendar.');});
+  $('#tdate').addEventListener('change',function(e){state.tdate=e.target.value;renderTurma();});
+  $('#tprev').addEventListener('click',function(){var i=DAYS.indexOf(state.tdate);if(i>0){state.tdate=DAYS[i-1];renderTurma();}});
+  $('#tnext').addEventListener('click',function(){var i=DAYS.indexOf(state.tdate);if(i<DAYS.length-1){state.tdate=DAYS[i+1];renderTurma();}});
+  $('#tq').addEventListener('input',function(e){state.tq=e.target.value;renderTurma();});
+  $('#tg').addEventListener('change',function(e){state.tg=e.target.value;renderTurma();});
+  $('#ts').addEventListener('change',function(e){state.ts=e.target.value;renderTurma();});
+}
+
+load();initTurmaDate();renderQ();bind();renderCal();loadGIS();
+var h=(location.hash||'').replace('#','');
+if(['turma','rodizio','confirmar','calendario'].indexOf(h)>=0)showTab(h);
+})();
+</script>
+</body>
+</html>
